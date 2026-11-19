@@ -370,7 +370,7 @@ const PARAMS=[
     {p:"a",label:"Rate a (real)",       types:["exp"],  min:-10,  max:10,  step:0.1},
     {p:"A",label:"Amplitude A",         types:["sine"], min:-100, max:100, step:0.1},
     {p:"f",label:"Frequency f (Hz)",    types:["sine"], min:0,     max:20,  step:0.1},
-    {p:"phi",label:"Phase φ (radians)",   types:["sine"], min:-100,  max:100, step:0.1}
+    {p:"k",label:"Phase factor k  (φ = k·π)", types:["sine"], min:-100, max:100, step:0.1}
 ];
 
 const DESCS={
@@ -378,7 +378,7 @@ const DESCS={
     imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1."
 };
 
-const sig={type:"exp", C:1, a:0.5, A:1, f:1, phi:0};
+const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0};
 
 const view={tmin:-10, tmax:10, auto:true, ymin:-1, ymax:1};
 
@@ -560,7 +560,7 @@ function num(v){
 
 function valueAt(t){
     if(sig.type==="exp")  return sig.C*Math.exp(sig.a*t);
-    if(sig.type==="sine") return sig.A*Math.cos(2*Math.PI*sig.f*t+sig.phi);
+    if(sig.type==="sine") return sig.A*Math.cos(2*Math.PI*sig.f*t+sig.k*Math.PI);
     if(sig.type==="step") return t>=0?1:0;
     return 0;
 }
@@ -570,7 +570,7 @@ function equation(){
         return "x(t) = "+num(sig.C)+" · exp("+num(sig.a)+" t)";
     if(sig.type==="sine")
         return "x(t) = "+num(sig.A)+" · cos(2π · "+num(sig.f)+" · t"+
-               (sig.phi<0?" − "+num(-sig.phi):" + "+num(sig.phi))+")";
+               (sig.k===0?"":(sig.k<0?" − "+num(-sig.k):" + "+num(sig.k))+"π")+")";
     if(sig.type==="step") return "x(t) = u(t)";
     return "x(t) = δ(t)";
 }
