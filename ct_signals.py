@@ -300,7 +300,7 @@ html = r"""
 <button class="theme" id="theme">🌙 DARK MODE</button>
 
 <h2>1306203 Signals & Systems: Basic Continuous-Time Signals</h2>
-<div class="subtitle">Choose a signal, set its parameters and the plotting area</div>
+<div class="subtitle"> </div>
 
 <div class="layout">
 
