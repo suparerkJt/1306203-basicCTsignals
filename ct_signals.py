@@ -384,7 +384,7 @@ const PARAMS=[
 const DESCS={
     step:"u(t) = 1 for t ≥ 0 and 0 for t &lt; 0.",
     imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1.",
-    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>. The real and imaginary parts are plotted separately, each with the envelope ±|C|·e<sup>rt</sup> (dashed). Both plots share the same amplitude axis."
+    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>."
 };
 
 const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0, mag:1, th:0, r:-0.2, d:1};
@@ -876,7 +876,7 @@ function renderComplex(ctx,W,H){
         // envelope  +|C| e^(rt)  and  -|C| e^(rt)
         ctx.strokeStyle=C.env;
         ctx.lineWidth=0.8;
-        ctx.setLineDash([3,2]);
+        ctx.setLineDash([4,3]);
 
         [1,-1].forEach(sg=>{
 
