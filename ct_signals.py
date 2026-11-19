@@ -803,7 +803,7 @@ function drawLegend(ctx,R,T,items){
 
         ctx.save();
         ctx.strokeStyle=it.color;
-        ctx.lineWidth=it.dash?2.2:3.2;
+        ctx.lineWidth=it.dash?1.3:3.2;
         if(it.dash) ctx.setLineDash([6,4]);
         ctx.beginPath(); ctx.moveTo(x+10,yy-4); ctx.lineTo(x+34,yy-4); ctx.stroke();
         ctx.restore();
@@ -875,7 +875,7 @@ function renderComplex(ctx,W,H){
 
         // envelope  +|C| e^(rt)  and  -|C| e^(rt)
         ctx.strokeStyle=C.env;
-        ctx.lineWidth=2.2;
+        ctx.lineWidth=1.3;
         ctx.setLineDash([8,6]);
 
         [1,-1].forEach(sg=>{
