@@ -876,7 +876,7 @@ function renderComplex(ctx,W,H){
         // envelope  +|C| e^(rt)  and  -|C| e^(rt)
         ctx.strokeStyle=C.env;
         ctx.lineWidth=0.8;
-        ctx.setLineDash([4,3]);
+        ctx.setLineDash([6,4]);
 
         [1,-1].forEach(sg=>{
 
