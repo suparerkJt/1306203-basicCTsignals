@@ -307,10 +307,10 @@ html = r"""
             <div class="subhead" style="margin-top:0">Time axis</div>
             <div class="grid2">
                 <label>t<sub>min</sub> (s)
-                    <input id="tmin" type="number" value="-5" min="-1000" max="999" step="1">
+                    <input id="tmin" type="number" value="-10" min="-1000" max="999" step="1">
                 </label>
                 <label>t<sub>max</sub> (s)
-                    <input id="tmax" type="number" value="5" min="-999" max="1000" step="1">
+                    <input id="tmax" type="number" value="10" min="-999" max="1000" step="1">
                 </label>
             </div>
 
@@ -369,7 +369,8 @@ const PARAMS=[
     {p:"C",label:"Amplitude C",         types:["exp"],  min:-100, max:100, step:0.1},
     {p:"a",label:"Rate a (real)",       types:["exp"],  min:-10,  max:10,  step:0.1},
     {p:"A",label:"Amplitude A",         types:["sine"], min:-100, max:100, step:0.1},
-    {p:"f",label:"Frequency f (Hz)",    types:["sine"], min:0.01, max:20,  step:0.01}
+    {p:"f",label:"Frequency f (Hz)",    types:["sine"], min:0,     max:20,  step:0.1},
+    {p:"phi",label:"Phase φ (radians)",   types:["sine"], min:-100,  max:100, step:0.1}
 ];
 
 const DESCS={
@@ -377,9 +378,9 @@ const DESCS={
     imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1."
 };
 
-const sig={type:"exp", C:1, a:0.5, A:1, f:1};
+const sig={type:"exp", C:1, a:0.5, A:1, f:1, phi:0};
 
-const view={tmin:-5, tmax:5, auto:true, ymin:-1, ymax:1};
+const view={tmin:-10, tmax:10, auto:true, ymin:-1, ymax:1};
 
 // ======================================
 // LEFT COLUMN: SIGNAL CARD
@@ -559,7 +560,7 @@ function num(v){
 
 function valueAt(t){
     if(sig.type==="exp")  return sig.C*Math.exp(sig.a*t);
-    if(sig.type==="sine") return sig.A*Math.cos(2*Math.PI*sig.f*t);
+    if(sig.type==="sine") return sig.A*Math.cos(2*Math.PI*sig.f*t+sig.phi);
     if(sig.type==="step") return t>=0?1:0;
     return 0;
 }
@@ -568,7 +569,8 @@ function equation(){
     if(sig.type==="exp")
         return "x(t) = "+num(sig.C)+" · exp("+num(sig.a)+" t)";
     if(sig.type==="sine")
-        return "x(t) = "+num(sig.A)+" · cos(2π · "+num(sig.f)+" · t)";
+        return "x(t) = "+num(sig.A)+" · cos(2π · "+num(sig.f)+" · t"+
+               (sig.phi<0?" − "+num(-sig.phi):" + "+num(sig.phi))+")";
     if(sig.type==="step") return "x(t) = u(t)";
     return "x(t) = δ(t)";
 }
