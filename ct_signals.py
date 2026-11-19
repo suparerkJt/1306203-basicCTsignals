@@ -4,7 +4,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Basic Continuous-Time Signals",
+    page_title="1306203/Basic Continuous-Time Signals",
     layout="wide",
 )
 
@@ -291,7 +291,7 @@ html = r"""
 
 <button class="theme" id="theme">🌙 DARK MODE</button>
 
-<h2>Basic Continuous-Time Signals</h2>
+<h2>1306203 Signals & Systems: Basic Continuous-Time Signals</h2>
 <div class="subtitle">Choose a signal, set its parameters and the plotting area</div>
 
 <div class="layout">
@@ -822,7 +822,7 @@ function renderComplex(ctx,W,H){
 
     if(view.auto){
 
-        // the envelope bounds both parts, so the range is symmetric
+        // the  bounds both parts, so the range is symmetric
         let m=0;
         for(let i=0;i<=cur.n;i++){
             const e=cur.en[i];
@@ -875,7 +875,7 @@ function renderComplex(ctx,W,H){
 
         // envelope  +|C| e^(rt)  and  -|C| e^(rt)
         ctx.strokeStyle=C.env;
-        ctx.lineWidth=1.3;
+        ctx.lineWidth=1;
         ctx.setLineDash([8,6]);
 
         [1,-1].forEach(sg=>{
