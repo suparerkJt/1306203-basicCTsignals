@@ -4,7 +4,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Basic Continuous-Time Signals",
+    page_title="1306203/Basic Continuous-Time Signals",
     layout="wide",
 )
 
@@ -299,7 +299,7 @@ html = r"""
 
 <button class="theme" id="theme">🌙 DARK MODE</button>
 
-<h2>Basic Continuous-Time Signals</h2>
+<h2>1306203 Signals & Systems: Basic Continuous-Time Signals</h2>
 <div class="subtitle">Choose a signal, set its parameters and the plotting area</div>
 
 <div class="layout">
@@ -395,7 +395,7 @@ const PARAMS=[
 const DESCS={
     step:"u(t) = 1 for t ≥ 0 and 0 for t &lt; 0.",
     imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1.",
-    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>. The real and imaginary parts are plotted separately, each with the envelope ±|C|·e<sup>rt</sup> (dashed). Both plots share the same amplitude axis."
+    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>."
 };
 
 const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0, mag:1, th:0, r:-0.2, d:1};
