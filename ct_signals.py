@@ -378,7 +378,7 @@ const PARAMS=[
     {p:"mag",label:"Magnitude |C|",                      types:["cplx"], min:0,    max:100, step:0.1},
     {p:"th", label:"Phase factor k  (θ = k·π)",           types:["cplx"], min:-100, max:100, step:0.1},
     {p:"r",  label:"Real part r of a  (1/s)",             types:["cplx"], min:-10,  max:10,  step:0.1},
-    {p:"w",  label:"Imaginary part ω<sub>0</sub> of a  (rad/s)", types:["cplx"], min:-100, max:100, step:0.1}
+    {p:"d",  label:"Frequency factor d  (ω<sub>0</sub> = d·π rad/s)", types:["cplx"], min:-100, max:100, step:0.1}
 ];
 
 const DESCS={
@@ -387,7 +387,7 @@ const DESCS={
     cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>. The real and imaginary parts are plotted separately, each with the envelope ±|C|·e<sup>rt</sup> (dashed). Both plots share the same amplitude axis."
 };
 
-const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0, mag:1, th:0, r:-0.2, w:3};
+const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0, mag:1, th:0, r:-0.2, d:1};
 
 const view={tmin:-10, tmax:10, auto:true, ymin:-1, ymax:1};
 
@@ -583,7 +583,7 @@ function equation(){
                (sig.k===0?"":(sig.k<0?" − "+num(-sig.k):" + "+num(sig.k))+"π")+")";
     if(sig.type==="cplx")
         return "x(t) = "+num(sig.mag)+"·e^(j"+num(sig.th)+"π) · exp(("+num(sig.r)+
-               (sig.w<0?" − j"+num(-sig.w):" + j"+num(sig.w))+") t)";
+               (sig.d<0?" − j"+num(-sig.d):" + j"+num(sig.d))+"π) t)";
     if(sig.type==="step") return "x(t) = u(t)";
     return "x(t) = δ(t)";
 }
@@ -703,7 +703,7 @@ function roundRect(ctx,x,y,w,h,r){
 function sampleComplex(){
 
     const span=view.tmax-view.tmin;
-    const n=Math.min(40000,Math.max(2000,Math.ceil(span*Math.abs(sig.w)/(2*Math.PI)*40)));
+    const n=Math.min(40000,Math.max(2000,Math.ceil(span*Math.abs(sig.d)/2*40)));
 
     const ts=new Float64Array(n+1), re=new Float64Array(n+1),
           im=new Float64Array(n+1), en=new Float64Array(n+1);
@@ -712,7 +712,7 @@ function sampleComplex(){
 
         const t=view.tmin+span*i/n;
         const e=sig.mag*Math.exp(sig.r*t);
-        const ph=sig.w*t+sig.th*Math.PI;
+        const ph=sig.d*Math.PI*t+sig.th*Math.PI;
         const ok=Number.isFinite(e)&&e<=1e15;
 
         ts[i]=t;
@@ -941,7 +941,7 @@ function renderComplex(ctx,W,H){
 
         const t=view.tmin+(hoverX-L)/(R-L)*(view.tmax-view.tmin);
         const e=sig.mag*Math.exp(sig.r*t);
-        const ph0=sig.w*t+sig.th*Math.PI;
+        const ph0=sig.d*Math.PI*t+sig.th*Math.PI;
 
         if(Number.isFinite(e)&&e<=1e15){
 
