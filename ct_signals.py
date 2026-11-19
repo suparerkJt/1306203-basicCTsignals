@@ -4,7 +4,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="1306203/Basic Continuous-Time Signals",
+    page_title="Basic Continuous-Time Signals",
     layout="wide",
 )
 
@@ -211,11 +211,19 @@ html = r"""
 /* ---------- right column ---------- */
 #ROOT_ID .right { min-width:0; }
 
+#ROOT_ID .statusrow {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:12px;
+}
+
 #ROOT_ID .status {
     text-align:center;
     width:fit-content;
     max-width:100%;
-    margin:0 auto 12px;
+    margin:0;
     padding:9px 20px;
     border-radius:999px;
     background:#ffffff;
@@ -291,7 +299,7 @@ html = r"""
 
 <button class="theme" id="theme">🌙 DARK MODE</button>
 
-<h2>1306203 Signals & Systems: Basic Continuous-Time Signals</h2>
+<h2>Basic Continuous-Time Signals</h2>
 <div class="subtitle">Choose a signal, set its parameters and the plotting area</div>
 
 <div class="layout">
@@ -336,7 +344,10 @@ html = r"""
 
     <!-- RIGHT COLUMN -->
     <div class="right">
-        <div class="status" id="status"></div>
+        <div class="statusrow">
+            <div class="status" id="status_eq"></div>
+            <div class="status" id="status_rng"></div>
+        </div>
         <canvas id="cv"></canvas>
     </div>
 
@@ -384,7 +395,7 @@ const PARAMS=[
 const DESCS={
     step:"u(t) = 1 for t ≥ 0 and 0 for t &lt; 0.",
     imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1.",
-    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>."
+    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>. The real and imaginary parts are plotted separately, each with the envelope ±|C|·e<sup>rt</sup> (dashed). Both plots share the same amplitude axis."
 };
 
 const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0, mag:1, th:0, r:-0.2, d:1};
@@ -696,6 +707,17 @@ function roundRect(ctx,x,y,w,h,r){
     ctx.closePath();
 }
 
+// Block 1: the function with the actual parameters.
+// Block 2: the plotted time range and amplitude range.
+function updateInfo(ymin,ymax){
+
+    $("#status_eq").textContent=equation();
+
+    $("#status_rng").textContent=
+        "t: "+num(view.tmin)+" … "+num(view.tmax)+" s     |     amplitude: "+
+        num(ymin)+" … "+num(ymax)+(view.auto?" (auto)":" (fixed)");
+}
+
 // ======================================
 // COMPLEX EXPONENTIAL: Re and Im plots with envelopes
 // ======================================
@@ -822,7 +844,7 @@ function renderComplex(ctx,W,H){
 
     if(view.auto){
 
-        // the  bounds both parts, so the range is symmetric
+        // the envelope bounds both parts, so the range is symmetric
         let m=0;
         for(let i=0;i<=cur.n;i++){
             const e=cur.en[i];
@@ -841,9 +863,7 @@ function renderComplex(ctx,W,H){
         ymax=view.ymax;
     }
 
-    $("#status").textContent=
-        equation()+"     |     t: "+num(view.tmin)+" … "+num(view.tmax)+" s"+
-        "     |     amplitude: "+num(ymin)+" … "+num(ymax)+(view.auto?" (auto)":" (fixed)");
+    updateInfo(ymin,ymax);
 
     // ----- geometry: two stacked plots sharing the time range
     const L=68, R=W-24;
@@ -1019,9 +1039,7 @@ function render(){
         ymax=view.ymax;
     }
 
-    $("#status").textContent=
-        equation()+"     |     t: "+num(view.tmin)+" … "+num(view.tmax)+" s"+
-        "     |     amplitude: "+num(ymin)+" … "+num(ymax)+(view.auto?" (auto)":" (fixed)");
+    updateInfo(ymin,ymax);
 
     // ----- plot geometry
     const L=68, R=W-24, T=40, B=H-48;
