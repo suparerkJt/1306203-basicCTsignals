@@ -360,25 +360,34 @@ const TYPES={
     step: {label:"Unit step",
            path:"M2 24 H19 V6 H38"},
     imp:  {label:"Unit impulse",
-           path:"M2 24 H38 M20 24 V6 M15.5 11 L20 5 L24.5 11"}
+           path:"M2 24 H38 M20 24 V6 M15.5 11 L20 5 L24.5 11"},
+    cplx: {label:"Complex exponential",
+           path:"M2 14 C5 0 8 0 11 14 S17 26 20 14 S25 7 28 14 S33 19 38 14"}
 };
 
-const ORDER=["exp","sine","step","imp"];
+const ORDER=["exp","sine","step","imp","cplx"];
 
 const PARAMS=[
     {p:"C",label:"Amplitude C",         types:["exp"],  min:-100, max:100, step:0.1},
     {p:"a",label:"Rate a (real)",       types:["exp"],  min:-10,  max:10,  step:0.1},
     {p:"A",label:"Amplitude A",         types:["sine"], min:-100, max:100, step:0.1},
     {p:"f",label:"Frequency f (Hz)",    types:["sine"], min:0,     max:20,  step:0.1},
-    {p:"k",label:"Phase factor k  (φ = k·π)", types:["sine"], min:-100, max:100, step:0.1}
+    {p:"k",label:"Phase factor k  (φ = k·π)", types:["sine"], min:-100, max:100, step:0.1},
+
+    // complex exponential  C = |C| e^(jθ),  a = r + jω0
+    {p:"mag",label:"Magnitude |C|",                      types:["cplx"], min:0,    max:100, step:0.1},
+    {p:"th", label:"Phase factor k  (θ = k·π)",           types:["cplx"], min:-100, max:100, step:0.1},
+    {p:"r",  label:"Real part r of a  (1/s)",             types:["cplx"], min:-10,  max:10,  step:0.1},
+    {p:"w",  label:"Imaginary part ω<sub>0</sub> of a  (rad/s)", types:["cplx"], min:-100, max:100, step:0.1}
 ];
 
 const DESCS={
     step:"u(t) = 1 for t ≥ 0 and 0 for t &lt; 0.",
-    imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1."
+    imp:"δ(t) has unit area concentrated at t = 0. It is drawn as an arrow of height 1.",
+    cplx:"C = |C|·e<sup>jθ</sup> and a = r + jω<sub>0</sub>. The real and imaginary parts are plotted separately, each with the envelope ±|C|·e<sup>rt</sup> (dashed). Both plots share the same amplitude axis."
 };
 
-const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0};
+const sig={type:"exp", C:1, a:0.5, A:1, f:1, k:0, mag:1, th:0, r:-0.2, w:3};
 
 const view={tmin:-10, tmax:10, auto:true, ymin:-1, ymax:1};
 
@@ -393,7 +402,7 @@ function buildCard(){
     let h='<h3>Signal type</h3><div class="tiles">';
 
     ORDER.forEach(id=>{
-        h+='<div class="tile" data-type="'+id+'">'+
+        h+='<div class="tile" data-type="'+id+'"'+(id==="cplx"?' style="grid-column:1 / -1"':'')+'>'+
            '<svg viewBox="0 0 40 28"><path d="'+TYPES[id].path+
            '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
            TYPES[id].label+'</div>';
@@ -417,6 +426,7 @@ function buildCard(){
         el.addEventListener("click",()=>{
             sig.type=el.dataset.type;
             refreshCard();
+            fit();          // the complex signal needs a taller plot
             render();
         });
     });
@@ -522,10 +532,10 @@ $("#m_fixed").addEventListener("click",()=>setMode(false));
 
 const themes={
     light:{text:"#1f2a44",tick:"#44506e",axis:"#44506e",zero:"#9aa6bf",grid:"#e0e6f3",
-           line:"#2f6fed",accent:"#e5484d",ring:"#ffffff",
+           line:"#2f6fed",im:"#12a36a",env:"#f08a24",accent:"#e5484d",ring:"#ffffff",
            legendBg:"rgba(255,255,255,0.92)",glow:5},
     dark:{text:"#e6edf7",tick:"#b4c0d9",axis:"#b4c0d9",zero:"#6e7b96",grid:"#27324a",
-          line:"#58a6ff",accent:"#ff6b6b",ring:"#111724",
+          line:"#58a6ff",im:"#3ddc97",env:"#ffb454",accent:"#ff6b6b",ring:"#111724",
           legendBg:"rgba(15,21,34,0.92)",glow:14}
 };
 
@@ -571,6 +581,9 @@ function equation(){
     if(sig.type==="sine")
         return "x(t) = "+num(sig.A)+" · cos(2π · "+num(sig.f)+" · t"+
                (sig.k===0?"":(sig.k<0?" − "+num(-sig.k):" + "+num(sig.k))+"π")+")";
+    if(sig.type==="cplx")
+        return "x(t) = "+num(sig.mag)+"·e^(j"+num(sig.th)+"π) · exp(("+num(sig.r)+
+               (sig.w<0?" − j"+num(-sig.w):" + j"+num(sig.w))+") t)";
     if(sig.type==="step") return "x(t) = u(t)";
     return "x(t) = δ(t)";
 }
@@ -635,7 +648,9 @@ let hoverX=null;
 function fit(){
 
     const w=Math.max(280,Math.floor(cv.parentElement.clientWidth));
-    const h=Math.round(Math.min(600,Math.max(340,w*0.56)));
+    const h=sig.type==="cplx"
+        ? Math.round(Math.min(780,Math.max(560,w*0.78)))     // two stacked plots
+        : Math.round(Math.min(600,Math.max(340,w*0.56)));
 
     cv._w=w;
     cv._h=h;
@@ -681,6 +696,296 @@ function roundRect(ctx,x,y,w,h,r){
     ctx.closePath();
 }
 
+// ======================================
+// COMPLEX EXPONENTIAL: Re and Im plots with envelopes
+// ======================================
+
+function sampleComplex(){
+
+    const span=view.tmax-view.tmin;
+    const n=Math.min(40000,Math.max(2000,Math.ceil(span*Math.abs(sig.w)/(2*Math.PI)*40)));
+
+    const ts=new Float64Array(n+1), re=new Float64Array(n+1),
+          im=new Float64Array(n+1), en=new Float64Array(n+1);
+
+    for(let i=0;i<=n;i++){
+
+        const t=view.tmin+span*i/n;
+        const e=sig.mag*Math.exp(sig.r*t);
+        const ph=sig.w*t+sig.th*Math.PI;
+        const ok=Number.isFinite(e)&&e<=1e15;
+
+        ts[i]=t;
+        en[i]=ok?e:NaN;
+        re[i]=ok?e*Math.cos(ph):NaN;
+        im[i]=ok?e*Math.sin(ph):NaN;
+    }
+
+    return {ts,re,im,en,n};
+}
+
+function drawFrame(ctx,L,R,T,B,ymin,ymax,X,Y,title,ylabel){
+
+    const xt=niceTicks(view.tmin,view.tmax,Math.max(4,Math.floor((R-L)/90)));
+    const yt=niceTicks(ymin,ymax,Math.max(3,Math.floor((B-T)/50)));
+
+    ctx.font="12px Arial";
+    ctx.lineWidth=1;
+
+    xt.ticks.forEach(v=>{
+        const x=X(v);
+
+        ctx.strokeStyle=C.grid;
+        ctx.beginPath(); ctx.moveTo(x,T); ctx.lineTo(x,B); ctx.stroke();
+
+        ctx.fillStyle=C.tick;
+        ctx.textAlign="center";
+        ctx.fillText(fmt(v,xt.step),x,B+17);
+    });
+
+    yt.ticks.forEach(v=>{
+        const y=Y(v);
+
+        ctx.strokeStyle=C.grid;
+        ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke();
+
+        ctx.fillStyle=C.tick;
+        ctx.textAlign="right";
+        ctx.fillText(fmt(v,yt.step),L-8,y+4);
+    });
+
+    ctx.strokeStyle=C.zero;
+    ctx.lineWidth=1.6;
+    ctx.beginPath();
+    if(ymin<=0&&ymax>=0){ ctx.moveTo(L,Y(0)); ctx.lineTo(R,Y(0)); }
+    if(view.tmin<=0&&view.tmax>=0){ ctx.moveTo(X(0),T); ctx.lineTo(X(0),B); }
+    ctx.stroke();
+
+    ctx.strokeStyle=C.axis;
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(L,T); ctx.lineTo(L,B); ctx.lineTo(R,B);
+    ctx.stroke();
+
+    ctx.fillStyle=C.text;
+    ctx.textAlign="left";
+    ctx.font="bold 15px Arial";
+    ctx.fillText(title,L,T-12);
+
+    ctx.textAlign="center";
+    ctx.font="14px Arial";
+    ctx.save();
+    ctx.translate(18,(T+B)/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText(ylabel,0,0);
+    ctx.restore();
+}
+
+// small legend box; items: [{color,label,dash}]
+function drawLegend(ctx,R,T,items){
+
+    ctx.font="bold 12px Arial";
+
+    let w=0;
+    items.forEach(it=>{ w=Math.max(w,ctx.measureText(it.label).width); });
+    w+=52;
+
+    const h=10+items.length*20;
+    const x=R-w-8, y=T+8;
+
+    roundRect(ctx,x,y,w,h,8);
+    ctx.fillStyle=C.legendBg;
+    ctx.fill();
+
+    items.forEach((it,k)=>{
+
+        const yy=y+20+k*20;
+
+        ctx.save();
+        ctx.strokeStyle=it.color;
+        ctx.lineWidth=it.dash?2.2:3.2;
+        if(it.dash) ctx.setLineDash([6,4]);
+        ctx.beginPath(); ctx.moveTo(x+10,yy-4); ctx.lineTo(x+34,yy-4); ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle=it.color;
+        ctx.textAlign="left";
+        ctx.fillText(it.label,x+40,yy);
+    });
+}
+
+function renderComplex(ctx,W,H){
+
+    const cur=sampleComplex();
+
+    let ymin, ymax;
+
+    if(view.auto){
+
+        // the envelope bounds both parts, so the range is symmetric
+        let m=0;
+        for(let i=0;i<=cur.n;i++){
+            const e=cur.en[i];
+            if(!Number.isNaN(e)&&e>m) m=e;
+        }
+
+        [ymin,ymax]=padRange(-m,m);
+
+        view.ymin=Number(ymin.toFixed(3));
+        view.ymax=Number(ymax.toFixed(3));
+        yminIn.value=view.ymin;
+        ymaxIn.value=view.ymax;
+    }
+    else{
+        ymin=view.ymin;
+        ymax=view.ymax;
+    }
+
+    $("#status").textContent=
+        equation()+"     |     t: "+num(view.tmin)+" … "+num(view.tmax)+" s"+
+        "     |     amplitude: "+num(ymin)+" … "+num(ymax)+(view.auto?" (auto)":" (fixed)");
+
+    // ----- geometry: two stacked plots sharing the time range
+    const L=68, R=W-24;
+    const ph=Math.max(120,(H-158)/2);
+
+    const X=t=>L+(t-view.tmin)/(view.tmax-view.tmin)*(R-L);
+
+    const subs=[
+        {T:40,        key:"re",color:C.line,title:"Real part",      ylabel:"Re{x(t)}"},
+        {T:40+ph+70,  key:"im",color:C.im,  title:"Imaginary part", ylabel:"Im{x(t)}"}
+    ];
+
+    subs.forEach(sb=>{
+        sb.B=sb.T+ph;
+        sb.Y=v=>sb.B-(v-ymin)/(ymax-ymin)*(sb.B-sb.T);
+    });
+
+    subs.forEach(sb=>{
+
+        drawFrame(ctx,L,R,sb.T,sb.B,ymin,ymax,X,sb.Y,sb.title,sb.ylabel);
+
+        const data=cur[sb.key];
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(L,sb.T,R-L,sb.B-sb.T);
+        ctx.clip();
+        ctx.lineCap="round";
+
+        // envelope  +|C| e^(rt)  and  -|C| e^(rt)
+        ctx.strokeStyle=C.env;
+        ctx.lineWidth=2.2;
+        ctx.setLineDash([8,6]);
+
+        [1,-1].forEach(sg=>{
+
+            ctx.beginPath();
+            let pen=false;
+
+            for(let i=0;i<=cur.n;i++){
+
+                const e=cur.en[i];
+                if(Number.isNaN(e)){ pen=false; continue; }
+
+                const x=X(cur.ts[i]);
+                const y=Math.max(-1e5,Math.min(1e5,sb.Y(sg*e)));
+
+                if(!pen){ ctx.moveTo(x,y); pen=true; } else ctx.lineTo(x,y);
+            }
+
+            ctx.stroke();
+        });
+
+        ctx.setLineDash([]);
+
+        // the signal part
+        ctx.save();
+        ctx.shadowColor=sb.color;
+        ctx.shadowBlur=C.glow;
+        ctx.strokeStyle=sb.color;
+        ctx.lineWidth=3;
+        ctx.beginPath();
+
+        let pen=false;
+
+        for(let i=0;i<=cur.n;i++){
+
+            const v=data[i];
+            if(Number.isNaN(v)){ pen=false; continue; }
+
+            const x=X(cur.ts[i]);
+            const y=Math.max(-1e5,Math.min(1e5,sb.Y(v)));
+
+            if(!pen){ ctx.moveTo(x,y); pen=true; } else ctx.lineTo(x,y);
+        }
+
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore();
+
+        drawLegend(ctx,R,sb.T,[
+            {color:sb.color,label:sb.ylabel},
+            {color:C.env,dash:true,label:"Envelope ±|C|·exp(r t)"}
+        ]);
+    });
+
+    ctx.fillStyle=C.text;
+    ctx.textAlign="center";
+    ctx.font="14px Arial";
+    ctx.fillText("t  (seconds)",(L+R)/2,H-10);
+
+    // ----- hover read-out
+    if(hoverX!==null && hoverX>=L && hoverX<=R){
+
+        const t=view.tmin+(hoverX-L)/(R-L)*(view.tmax-view.tmin);
+        const e=sig.mag*Math.exp(sig.r*t);
+        const ph0=sig.w*t+sig.th*Math.PI;
+
+        if(Number.isFinite(e)&&e<=1e15){
+
+            const vals={re:e*Math.cos(ph0), im:e*Math.sin(ph0)};
+
+            subs.forEach(sb=>{
+
+                ctx.save();
+                ctx.strokeStyle=C.accent;
+                ctx.globalAlpha=0.7;
+                ctx.lineWidth=1.5;
+                ctx.setLineDash([5,5]);
+                ctx.beginPath(); ctx.moveTo(hoverX,sb.T); ctx.lineTo(hoverX,sb.B); ctx.stroke();
+                ctx.restore();
+
+                const py=sb.Y(vals[sb.key]);
+
+                if(py>=sb.T&&py<=sb.B){
+                    ctx.fillStyle=C.accent;
+                    ctx.beginPath(); ctx.arc(hoverX,py,6,0,2*Math.PI); ctx.fill();
+                    ctx.strokeStyle=C.ring;
+                    ctx.lineWidth=2;
+                    ctx.beginPath(); ctx.arc(hoverX,py,6,0,2*Math.PI); ctx.stroke();
+                }
+            });
+
+            const f=v=>(Math.abs(v)>=1e5?v.toExponential(2):v.toFixed(3));
+            const label="t = "+t.toFixed(3)+" s   Re = "+f(vals.re)+"   Im = "+f(vals.im)+"   |x| = "+f(e);
+
+            ctx.font="bold 12px Arial";
+            const w=ctx.measureText(label).width+20;
+            const bx=Math.max(L,R-w), by=4;
+
+            roundRect(ctx,bx,by,w,24,8);
+            ctx.fillStyle=C.legendBg;
+            ctx.fill();
+
+            ctx.fillStyle=C.text;
+            ctx.textAlign="left";
+            ctx.fillText(label,bx+10,by+16);
+        }
+    }
+}
+
 function render(){
 
     const W=cv._w, H=cv._h;
@@ -691,6 +996,8 @@ function render(){
     ctx.lineJoin="round";
 
     $("#formula").textContent=equation();
+
+    if(sig.type==="cplx"){ renderComplex(ctx,W,H); return; }
 
     // ----- amplitude range
     const curve=(sig.type==="exp"||sig.type==="sine")?sampleCurve():null;
@@ -975,4 +1282,4 @@ html = html.replace("ROOT_ID", uid)
 
 # Everything runs in the browser (JavaScript), so changing a parameter
 # never triggers a Streamlit rerun.
-components.html(html, height=1000, scrolling=True)
+components.html(html, height=1150, scrolling=True)
