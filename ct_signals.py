@@ -927,7 +927,7 @@ function renderComplex(ctx,W,H){
 
         drawLegend(ctx,R,sb.T,[
             {color:sb.color,label:sb.ylabel},
-            {color:C.env,dash:true,label:"Envelope ±|C|·exp(r t)"}
+            {color:C.env,dash:true,label:"±|C|·exp(r t)"}
         ]);
     });
 
